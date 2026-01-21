@@ -19,124 +19,65 @@
 
 
 
-// // ✅ LOAD ENV FIRST (VERY IMPORTANT)
-// require("dotenv").config();
-
-// const express = require("express");
-// const cors = require("cors");
-
-// // ROUTES
-// const authRoutes = require("./routes/authRoutes");
-// const dashboardRoutes = require("./routes/dashboardRoutes");
-// const activityRoutes = require("./routes/activityRoutes");
-// const challengeRoutes = require("./routes/challengeRoutes");
-// const aiCoachRoutes = require("./routes/aiCoachRoutes");
-
-// const app = express();
-
-// /* =========================
-//    CORS CONFIG
-// ========================= */
-// app.use(
-//   cors({
-//     origin: "http://localhost:5173",
-//     credentials: true,
-//   })
-// );
-
-// /* =========================
-//    BODY PARSER
-// ========================= */
-// app.use(express.json());
-
-// /* =========================
-//    ROUTES
-// ========================= */
-// app.use("/api/auth", authRoutes);
-// app.use("/api/dashboard", dashboardRoutes);
-// app.use("/api/activity", activityRoutes);
-// app.use("/api/challenge", challengeRoutes);
-// app.use("/api/ai", aiCoachRoutes);
-
-// /* =========================
-//    HEALTH CHECK (OPTIONAL)
-// ========================= */
-// app.get("/", (req, res) => {
-//   res.json({ success: true, message: "WellCare API running" });
-// });
-
-// module.exports = app;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 const express = require("express");
 const cors = require("cors");
+
+// Load env safely (Render injects env vars automatically)
 require("dotenv").config();
 
 const authRoutes = require("./routes/authRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const activityRoutes = require("./routes/activityRoutes");
 const challengeRoutes = require("./routes/challengeRoutes");
-const aiCoachRoutes = require("./routes/aiCoachRoutes");
+
+// ⚠️ DO NOT import OpenAI here
+// It must be initialized lazily inside routes only
 
 const app = express();
 
+/* ======================
+   CORS (PRODUCTION SAFE)
+====================== */
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: [
+      "http://localhost:5173", // local dev
+      process.env.FRONTEND_URL, // Render / prod frontend
+    ].filter(Boolean),
     credentials: true,
   })
 );
 
+/* ======================
+   MIDDLEWARE
+====================== */
 app.use(express.json());
 
+/* ======================
+   ROUTES
+====================== */
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/challenge", challengeRoutes);
-app.use("/api/ai", aiCoachRoutes);
+
+/* ======================
+   AI ROUTES (SAFE LOAD)
+====================== */
+if (process.env.OPENAI_API_KEY) {
+  const aiCoachRoutes = require("./routes/aiCoachRoutes");
+  app.use("/api/ai", aiCoachRoutes);
+  console.log("✅ AI routes enabled");
+} else {
+  console.warn("⚠️ OPENAI_API_KEY missing — AI routes disabled");
+}
+
+/* ======================
+   HEALTH CHECK
+====================== */
+app.get("/", (req, res) => {
+  res.status(200).json({ status: "Backend running" });
+});
 
 module.exports = app;
-
-
-
-
-
-
-
