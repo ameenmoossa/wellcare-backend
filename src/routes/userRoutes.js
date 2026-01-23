@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
 
-const { getAIInsight } = require("../controllers/aiCoachController");
+const { updateProfile } = require("../controllers/userController");
 const { protect } = require("../middleware/authMiddleware");
 
-router.post("/analyze", protect, getAIInsight);
+router.put("/profile", protect, updateProfile);
 
 module.exports = router;

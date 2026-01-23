@@ -48,55 +48,190 @@
 
 
 
+// const challengeService = require("../services/challengeService");
+
+// exports.getTodayChallenge = async (req, res) => {
+//   const user = req.user;
+
+//   if (!user?.goal || !user?.currentChallengeDay) {
+//     return res.json({
+//       success: true,
+//       day: null,
+//       plan: null,
+//     });
+//   }
+
+//   const day = user.currentChallengeDay;
+
+//   const plan = challengeService.getPlanByDay(
+//     user.goal,
+//     day
+//   );
+
+//   if (!plan) {
+//     return res.json({
+//       success: true,
+//       day,
+//       plan: null,
+//     });
+//   }
+
+//   res.json({
+//     success: true,
+//     day,
+//     plan,
+//   });
+// };
+
+// exports.completeTodayChallenge = async (req, res) => {
+//   const user = req.user;
+//   const day = user.currentChallengeDay;
+
+//   user.challengeProgress.set(String(day), true);
+
+//   if (day < 90) {
+//     user.currentChallengeDay += 1;
+//   }
+
+//   await user.save();
+
+//   res.json({
+//     success: true,
+//     nextDay: user.currentChallengeDay,
+//   });
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const challengeService = require("../services/challengeService");
 
+/* =========================
+   GET TODAY CHALLENGE
+========================= */
 exports.getTodayChallenge = async (req, res) => {
-  const user = req.user;
+  try {
+    const user = req.user;
+    const { startDate, goal } = req.query;
 
-  if (!user?.goal || !user?.currentChallengeDay) {
-    return res.json({
-      success: true,
-      day: null,
-      plan: null,
-    });
-  }
+    if (!goal || !startDate) {
+      return res.json({
+        success: true,
+        day: null,
+        plan: null,
+      });
+    }
 
-  const day = user.currentChallengeDay;
+    // ✅ Calculate challenge day dynamically
+    const start = new Date(startDate);
+    const today = new Date();
 
-  const plan = challengeService.getPlanByDay(
-    user.goal,
-    day
-  );
+    start.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
 
-  if (!plan) {
-    return res.json({
+    const day =
+      Math.floor((today - start) / (1000 * 60 * 60 * 24)) + 1;
+
+    if (day < 1 || day > 90) {
+      return res.json({
+        success: true,
+        day: null,
+        plan: null,
+      });
+    }
+
+    const plan = challengeService.getPlanByDay(goal, day);
+
+    if (!plan) {
+      return res.json({
+        success: true,
+        day,
+        plan: null,
+      });
+    }
+
+    res.json({
       success: true,
       day,
-      plan: null,
+      plan,
     });
+  } catch (err) {
+    console.error("GET TODAY CHALLENGE ERROR:", err);
+    res.status(500).json({ success: false });
   }
-
-  res.json({
-    success: true,
-    day,
-    plan,
-  });
 };
 
+/* =========================
+   COMPLETE TODAY CHALLENGE
+========================= */
 exports.completeTodayChallenge = async (req, res) => {
-  const user = req.user;
-  const day = user.currentChallengeDay;
+  try {
+    const user = req.user;
 
-  user.challengeProgress.set(String(day), true);
+    if (!user.challengeProgress) {
+      user.challengeProgress = new Map();
+    }
 
-  if (day < 90) {
-    user.currentChallengeDay += 1;
+    const { startDate } = req.body;
+
+    const start = new Date(startDate);
+    const today = new Date();
+
+    start.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    const day =
+      Math.floor((today - start) / (1000 * 60 * 60 * 24)) + 1;
+
+    user.challengeProgress.set(String(day), true);
+    await user.save();
+
+    res.json({
+      success: true,
+      completedDay: day,
+    });
+  } catch (err) {
+    console.error("COMPLETE CHALLENGE ERROR:", err);
+    res.status(500).json({ success: false });
   }
-
-  await user.save();
-
-  res.json({
-    success: true,
-    nextDay: user.currentChallengeDay,
-  });
 };

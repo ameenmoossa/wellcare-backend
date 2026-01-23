@@ -1,45 +1,27 @@
-const { generateWorkoutAdvice } = require("../services/aiCoachService");
+const { getCoachInsight } = require("../services/aiCoachService");
 
-exports.getWorkoutCoachAdvice = async (req, res) => {
+exports.getAIInsight = async (req, res) => {
   try {
-    const {
-      day,
-      workoutType,
-      duration,
-      intensity,
-      gymAccess,
-      streak,
-      missedDays,
-    } = req.body;
+    const { intensity, duration } = req.body;
 
-    // Basic validation
-    if (!day || !workoutType || !duration || !intensity) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing workout data",
-      });
+    // Fallback if auth user is missing
+    const goal = req.user?.goal || "General fitness";
+
+    const insight = await getCoachInsight({
+      intensity,
+      duration,
+      goal,
+    });
+
+    if (!insight) {
+      return res
+        .status(503)
+        .json({ message: "AI coach unavailable" });
     }
 
-    const advice = await generateWorkoutAdvice({
-      day,
-      workoutType,
-      duration,
-      intensity,
-      gymAccess,
-      streak: streak || 0,
-      missedDays: missedDays || 0,
-    });
-
-    return res.status(200).json({
-      success: true,
-      coachMessage: advice,
-    });
+    res.status(200).json({ insight });
   } catch (err) {
-    console.error("AI Coach Error:", err.message || err);
-
-    return res.status(500).json({
-      success: false,
-      message: "AI Coach failed",
-    });
+    console.error("AI Coach Error:", err);
+    res.status(500).json({ message: "AI coach unavailable" });
   }
 };

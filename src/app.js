@@ -1,68 +1,36 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// // ✅ LOAD ENV FIRST (VERY IMPORTANT)
-// require("dotenv").config();
-
 // const express = require("express");
 // const cors = require("cors");
 
 // // ROUTES
 // const authRoutes = require("./routes/authRoutes");
-// const dashboardRoutes = require("./routes/dashboardRoutes");
-// const activityRoutes = require("./routes/activityRoutes");
 // const challengeRoutes = require("./routes/challengeRoutes");
 // const aiCoachRoutes = require("./routes/aiCoachRoutes");
+// const userRoutes = require("./routes/userRoutes"); // ✅ REQUIRED
 
 // const app = express();
 
 // /* =========================
-//    CORS CONFIG
+//    MIDDLEWARE
 // ========================= */
-// app.use(
-//   cors({
-//     origin: "http://localhost:5173",
-//     credentials: true,
-//   })
-// );
-
-// /* =========================
-//    BODY PARSER
-// ========================= */
+// app.use(cors());
 // app.use(express.json());
 
 // /* =========================
-//    ROUTES
+//    API ROUTES
 // ========================= */
 // app.use("/api/auth", authRoutes);
-// app.use("/api/dashboard", dashboardRoutes);
-// app.use("/api/activity", activityRoutes);
-// app.use("/api/challenge", challengeRoutes);
-// app.use("/api/ai", aiCoachRoutes);
+// app.use("/api/challenges", challengeRoutes);
+// app.use("/api/ai-coach", aiCoachRoutes); // ✅ AI Coach
+// app.use("/api/user", userRoutes);        // ✅ Profile + Goal update
 
 // /* =========================
 //    HEALTH CHECK (OPTIONAL)
 // ========================= */
-// app.get("/", (req, res) => {
-//   res.json({ success: true, message: "WellCare API running" });
+// app.get("/api/health", (req, res) => {
+//   res.json({ status: "OK", service: "WellCare API" });
 // });
 
 // module.exports = app;
@@ -87,52 +55,101 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const express = require("express");
 const cors = require("cors");
-require("dotenv").config();
 
+// ROUTES
 const authRoutes = require("./routes/authRoutes");
-const dashboardRoutes = require("./routes/dashboardRoutes");
-const activityRoutes = require("./routes/activityRoutes");
 const challengeRoutes = require("./routes/challengeRoutes");
 const aiCoachRoutes = require("./routes/aiCoachRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 const app = express();
 
+/* =========================
+   MIDDLEWARE (FIXED CORS)
+========================= */
 app.use(
   cors({
-    origin: "http://localhost:5173",
-    credentials: true,
+    origin: [
+      "http://localhost:5173",
+      "https://wellcare2390.web.app",
+      "https://wellcare2390.firebaseapp.com",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
 app.use(express.json());
 
+/* =========================
+   API ROUTES
+========================= */
 app.use("/api/auth", authRoutes);
-app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/activity", activityRoutes);
-app.use("/api/challenge", challengeRoutes);
-app.use("/api/ai", aiCoachRoutes);
+app.use("/api/challenges", challengeRoutes);
+app.use("/api/ai-coach", aiCoachRoutes);
+app.use("/api/user", userRoutes);
+
+/* =========================
+   HEALTH CHECK
+========================= */
+app.get("/api/health", (req, res) => {
+  res.json({ status: "OK", service: "WellCare API" });
+});
 
 module.exports = app;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

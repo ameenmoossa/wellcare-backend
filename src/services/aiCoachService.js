@@ -1,57 +1,36 @@
 const OpenAI = require("openai");
 
-const client = new OpenAI({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-exports.generateWorkoutAdvice = async ({
-  day,
-  workoutType,
-  duration,
-  intensity,
-  gymAccess,
-  streak,
-  missedDays,
-}) => {
+exports.getCoachInsight = async ({ intensity, duration, goal }) => {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY missing");
+  }
+
   const prompt = `
-You are a professional fitness coach.
+You are a professional fitness AI coach.
 
-Workout details:
-- Day: ${day}
-- Workout: ${workoutType}
-- Duration: ${duration} minutes
-- Intensity: ${intensity}
-- Gym access: ${gymAccess}
-- Current streak: ${streak}
-- Missed days: ${missedDays}
+User goal: ${goal}
+Workout intensity: ${intensity}
+Workout duration: ${duration} minutes
 
-Rules:
-- Do NOT suggest new workouts
-- Do NOT change the plan
-- Give short, motivating recovery advice (2–3 sentences)
+Give short, practical coaching advice for today.
 `;
 
-  try {
-    const completion = await client.responses.create({
-      model: process.env.AI_COACH_MODEL || "gpt-4o-mini",
-      input: prompt,
-      max_output_tokens: Number(process.env.AI_COACH_MAX_TOKENS) || 150,
-      temperature: Number(process.env.AI_COACH_TEMPERATURE) || 0.7,
-    });
+  const response = await openai.chat.completions.create({
+    model: process.env.AI_COACH_MODEL || "gpt-4o-mini",
+    messages: [
+      { role: "system", content: "You are a fitness coach." },
+      { role: "user", content: prompt },
+    ],
+    temperature: 0.7,
+    max_tokens: 150,
+  });
 
-    return completion.output_text;
-  } catch (err) {
-    console.error("OPENAI ERROR:", err.message);
-    throw err;
-  }
+  return response.choices[0].message.content;
 };
-
-
-
-
-
-
-
 
 
 
