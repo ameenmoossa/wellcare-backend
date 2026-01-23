@@ -2,15 +2,17 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-/* =========================
-   REGISTER
-========================= */
-exports.register = async (req, res) => {
+const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields required" });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      console.error("JWT_SECRET missing");
+      return res.status(500).json({ message: "Server misconfiguration" });
     }
 
     const existingUser = await User.findOne({ email });
@@ -45,15 +47,12 @@ exports.register = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("REGISTER ERROR:", error);
+    console.error("REGISTER ERROR:", error.message);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-/* =========================
-   LOGIN
-========================= */
-exports.login = async (req, res) => {
+const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -73,7 +72,6 @@ exports.login = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // 🔑 IMPORTANT: RETURN CHALLENGE STATE
     res.json({
       token,
       user: {
@@ -85,7 +83,12 @@ exports.login = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("LOGIN ERROR:", error);
+    console.error("LOGIN ERROR:", error.message);
     res.status(500).json({ message: "Server error" });
   }
+};
+
+module.exports = {
+  register,
+  login,
 };
