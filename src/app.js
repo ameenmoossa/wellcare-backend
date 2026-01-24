@@ -163,7 +163,6 @@ const cors = require("cors");
 // ROUTES
 const authRoutes = require("./routes/authRoutes");
 const challengeRoutes = require("./routes/challengeRoutes");
-const aiCoachRoutes = require("./routes/aiCoachRoutes");
 const userRoutes = require("./routes/userRoutes");
 
 const app = express();
@@ -190,7 +189,6 @@ app.use(express.json());
 ========================= */
 app.use("/api/auth", authRoutes);
 app.use("/api/challenges", challengeRoutes);
-app.use("/api/ai-coach", aiCoachRoutes);
 app.use("/api/user", userRoutes);
 
 /* =========================
