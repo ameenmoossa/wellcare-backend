@@ -102,10 +102,6 @@
 
 
 
-
-
-
-
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -115,24 +111,38 @@ const jwt = require("jsonwebtoken");
 ===================== */
 const register = async (req, res) => {
   try {
+    console.log("REGISTER BODY:", req.body); // 🔍 debug log
+
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({
+        message: "All fields are required",
+      });
     }
 
     const exists = await User.findOne({ email });
     if (exists) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(400).json({
+        message: "User already exists",
+      });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // ✅ ALWAYS force password to string (CRITICAL FIX)
+    const safePassword = String(password);
+
+    const hashedPassword = await bcrypt.hash(safePassword, 10);
 
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
     });
+
+    // ✅ Ensure JWT_SECRET exists
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET is not defined");
+    }
 
     const token = jwt.sign(
       { id: user._id },
@@ -142,10 +152,17 @@ const register = async (req, res) => {
 
     res.status(201).json({
       token,
-      user: { id: user._id, name: user.name, email: user.email },
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error("REGISTER ERROR:", err); // 🔥 SHOW REAL ERROR
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 };
 
@@ -156,14 +173,28 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password required",
+      });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({
+        message: "Invalid credentials",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(
+      String(password),
+      user.password
+    );
+
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(400).json({
+        message: "Invalid credentials",
+      });
     }
 
     const token = jwt.sign(
@@ -174,10 +205,17 @@ const login = async (req, res) => {
 
     res.json({
       token,
-      user: { id: user._id, name: user.name, email: user.email },
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error("LOGIN ERROR:", err);
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 };
 
@@ -188,29 +226,47 @@ const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
+    }
+
     const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
 
     const isMatch = await bcrypt.compare(
-      currentPassword,
+      String(currentPassword),
       user.password
     );
 
     if (!isMatch) {
-      return res
-        .status(400)
-        .json({ message: "Current password incorrect" });
+      return res.status(400).json({
+        message: "Current password incorrect",
+      });
     }
 
-    user.password = await bcrypt.hash(newPassword, 10);
+    user.password = await bcrypt.hash(String(newPassword), 10);
     await user.save();
 
-    res.json({ message: "Password updated successfully" });
+    res.json({
+      message: "Password updated successfully",
+    });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error("CHANGE PASSWORD ERROR:", err);
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 };
 
-/* ✅ EXPORTS — THIS IS CRITICAL */
+/* =====================
+   EXPORTS
+===================== */
 module.exports = {
   register,
   login,
