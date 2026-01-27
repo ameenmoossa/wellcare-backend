@@ -172,15 +172,24 @@ const app = express();
 ========================= */
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://wellcare2390.web.app",
-      "https://wellcare2390.firebaseapp.com",
-    ],
+    origin: (origin, callback) => {
+      if (
+        !origin ||
+        origin.includes("localhost") ||
+        origin.includes("wellcare2390.web.app") ||
+        origin.includes("wellcare2390.firebaseapp.com")
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 
 app.use(express.json());
 
