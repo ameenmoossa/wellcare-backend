@@ -149,15 +149,9 @@
 
 
 
-
-
-
-
-
 const express = require("express");
 const cors = require("cors");
 
-// ROUTES
 const authRoutes = require("./routes/authRoutes");
 const challengeRoutes = require("./routes/challengeRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -165,20 +159,27 @@ const userRoutes = require("./routes/userRoutes");
 const app = express();
 
 /* =========================
-   MIDDLEWARE (CORS + BODY PARSER)
+   MIDDLEWARE
 ========================= */
+
+// ✅ CORS – SAFE + RENDER FRIENDLY
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (
-        !origin ||
-        origin.includes("localhost") ||
-        origin.includes("wellcare2390.web.app") ||
-        origin.includes("wellcare2390.firebaseapp.com")
-      ) {
+    origin: function (origin, callback) {
+      // allow server-to-server, Postman, Render health checks
+      if (!origin) return callback(null, true);
+
+      const allowedOrigins = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://wellcare2390.web.app",
+        "https://wellcare2390.firebaseapp.com",
+      ];
+
+      if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        callback(new Error("CORS not allowed"));
       }
     },
     credentials: true,
@@ -187,12 +188,12 @@ app.use(
   })
 );
 
-// ✅ BODY PARSERS (THIS FIXES THE 500 ERROR)
+// ✅ REQUIRED BODY PARSERS (FIXES req.body undefined)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* =========================
-   API ROUTES
+   ROUTES
 ========================= */
 app.use("/api/auth", authRoutes);
 app.use("/api/challenges", challengeRoutes);
@@ -202,7 +203,20 @@ app.use("/api/user", userRoutes);
    HEALTH CHECK
 ========================= */
 app.get("/api/health", (req, res) => {
-  res.json({ status: "OK", service: "WellCare API" });
+  res.status(200).json({
+    status: "OK",
+    message: "WellCare API running 🚀",
+  });
+});
+
+/* =========================
+   GLOBAL ERROR HANDLER
+========================= */
+app.use((err, req, res, next) => {
+  console.error("GLOBAL ERROR:", err.message);
+  res.status(500).json({
+    message: err.message || "Internal Server Error",
+  });
 });
 
 module.exports = app;
