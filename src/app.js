@@ -154,9 +154,6 @@
 
 
 
-
-
-
 const express = require("express");
 const cors = require("cors");
 
@@ -168,7 +165,7 @@ const userRoutes = require("./routes/userRoutes");
 const app = express();
 
 /* =========================
-   MIDDLEWARE (CORS FIX)
+   MIDDLEWARE (CORS + BODY PARSER)
 ========================= */
 app.use(
   cors({
@@ -190,8 +187,9 @@ app.use(
   })
 );
 
-
+// ✅ BODY PARSERS (THIS FIXES THE 500 ERROR)
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 /* =========================
    API ROUTES
